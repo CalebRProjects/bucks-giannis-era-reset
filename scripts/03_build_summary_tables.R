@@ -1,33 +1,691 @@
 # scripts/03_build_summary_tables.R
 
 # Purpose:
-# Build polished summary tables for the report and save them to outputs/tables.
+# Build curated summary tables for the Substack report and save appendix tables.
 
 source("scripts/02_clean_manual_data.R")
 
 # -------------------------------------------------------------------------
-# 1. Giannis awards / milestones table
+# 1. Giannis accomplishments table
 # -------------------------------------------------------------------------
 
-giannis_awards_table <- giannis_awards_clean |>
-  select(season, event_type, event, notes) |>
+giannis_accomplishments_table <- giannis_accomplishments_clean |>
+  arrange(accomplishment_group, accomplishment_order) |>
+  select(accomplishment_group, accomplishment, value, notes) |>
+  gt(groupname_col = "accomplishment_group") |>
+  tab_header(
+    title = md("**Giannis’ Milwaukee Résumé**"),
+    subtitle = "The case for the greatest Buck ever is not complicated"
+  ) |>
+  cols_label(
+    accomplishment = "Accomplishment",
+    value = "Count",
+    notes = "Context"
+  ) |>
+  cols_width(
+    accomplishment ~ px(230),
+    value ~ px(90),
+    notes ~ px(430)
+  ) |>
+  tab_options(
+    row_group.background.color = "#EFE6D8",
+    row_group.border.top.color = GRID,
+    row_group.border.bottom.color = GRID,
+    data_row.padding = px(7),
+    table.font.names = c("Arial", "Helvetica", "sans-serif"),
+    table.font.size = px(15),
+    heading.title.font.size = px(22),
+    heading.subtitle.font.size = px(14)
+  ) |>
+  tab_style(
+    style = cell_text(
+      weight = "bold",
+      color = TEXT_DARK,
+      size = px(18),
+      align = "center"
+    ),
+    locations = cells_body(columns = value)
+  ) |>
+  tab_style(
+    style = cell_text(
+      weight = "bold",
+      color = TEXT_DARK,
+      transform = "uppercase",
+      size = px(12)
+    ),
+    locations = cells_row_groups()
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_DARK),
+    locations = cells_body(columns = c(accomplishment, notes))
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_LIGHT, size = px(13)),
+    locations = cells_body(columns = notes)
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  giannis_accomplishments_table,
+  file.path(dir_tables, "giannis_accomplishments_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 2. Miami return profile table
+# -------------------------------------------------------------------------
+
+miami_return_profile_table <- databallr_profiles_clean |>
+  left_join(
+    current_roster_clean |>
+      select(player, age),
+    by = "player"
+  ) |>
+  mutate(
+    what_pops = case_when(
+      player == "Tyler Herro" ~ "High-volume scoring, spacing, and offensive stability",
+      player == "Jaime Jaquez Jr." ~ "On-ball feel, finishing touch, and rotation safety",
+      player == "Kel'el Ware" ~ "Athletic tools, shooting indicators, rebounding, and rim protection",
+      player == "Kasparas Jakucionis" ~ "Shooting signal and secondary playmaking flashes",
+      TRUE ~ main_read
+    ),
+    main_question = case_when(
+      player == "Tyler Herro" ~ "Is he part of the next core or the next player moved?",
+      player == "Jaime Jaquez Jr." ~ "Does the jumper get good enough to scale in playoff settings?",
+      player == "Kel'el Ware" ~ "Can the motor, strength, and defensive consistency catch up to the tools?",
+      player == "Kasparas Jakucionis" ~ "Can he become an actual advantage creator, not just a shooter/passer?",
+      TRUE ~ swing_skill
+    ),
+    article_read = case_when(
+      player == "Tyler Herro" ~ "Bridge scorer or reroute asset",
+      player == "Jaime Jaquez Jr." ~ "Safest basketball player in the return",
+      player == "Kel'el Ware" ~ "Highest physical upside swing",
+      player == "Kasparas Jakucionis" ~ "Developmental guard bet",
+      TRUE ~ role_label
+    ),
+    player = factor(
+      player,
+      levels = c("Tyler Herro", "Jaime Jaquez Jr.", "Kel'el Ware", "Kasparas Jakucionis")
+    )
+  ) |>
+  arrange(player) |>
+  select(player, age, pos, article_read, what_pops, main_question) |>
   gt() |>
   tab_header(
-    title = "Giannis Era Milestones",
-    subtitle = "Key awards, transactions, and franchise moments"
+    title = md("**What Milwaukee Got From Miami**"),
+    subtitle = "The return is less about one successor than four different developmental bets"
+  ) |>
+  cols_label(
+    player = "Player",
+    age = "Age",
+    pos = "Pos",
+    article_read = "Article Read",
+    what_pops = "What Pops",
+    main_question = "Main Question"
+  ) |>
+  cols_width(
+    player ~ px(140),
+    age ~ px(70),
+    pos ~ px(60),
+    article_read ~ px(190),
+    what_pops ~ px(300),
+    main_question ~ px(360)
+  ) |>
+  fmt_number(columns = age, decimals = 1) |>
+  tab_options(
+    table.background.color = BG,
+    heading.background.color = BG,
+    column_labels.background.color = BG,
+    table.border.top.color = GRID,
+    table.border.bottom.color = GRID,
+    column_labels.border.top.color = GRID,
+    column_labels.border.bottom.color = GRID,
+    table.font.names = c("Arial", "Helvetica", "sans-serif"),
+    table.font.size = px(15),
+    heading.title.font.size = px(22),
+    heading.subtitle.font.size = px(14),
+    data_row.padding = px(8)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = player)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = BUCKS_GREEN),
+    locations = cells_body(columns = article_read)
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_MID, size = px(13)),
+    locations = cells_body(columns = c(what_pops, main_question))
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  miami_return_profile_table,
+  file.path(dir_tables, "miami_return_profile_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 2B. Miami return DataBallr metrics table
+# -------------------------------------------------------------------------
+
+miami_return_metrics_table <- databallr_profiles_clean |>
+  mutate(
+    player = factor(
+      player,
+      levels = c("Tyler Herro", "Jaime Jaquez Jr.", "Kel'el Ware", "Kasparas Jakucionis")
+    )
+  ) |>
+  arrange(player) |>
+  select(
+    player, dpm, o_dpm, d_dpm,
+    shots, rts, three_pr, three_pct,
+    potast, onball, drb_pct, blk
+  ) |>
+  gt() |>
+  tab_header(
+    title = md("**DataBallr Snapshot: Miami Return**"),
+    subtitle = "Selected impact, shooting, creation, and frontcourt indicators"
+  ) |>
+  cols_label(
+    player = "Player",
+    dpm = "DPM",
+    o_dpm = "O-DPM",
+    d_dpm = "D-DPM",
+    shots = "Shots",
+    rts = "rTS",
+    three_pr = "3Pr",
+    three_pct = "3P%",
+    potast = "PotAst",
+    onball = "On-Ball",
+    drb_pct = "DRB%",
+    blk = "BLK"
+  ) |>
+  fmt_number(
+    columns = c(
+      dpm, o_dpm, d_dpm, shots, rts,
+      three_pr, three_pct, potast, onball, drb_pct, blk
+    ),
+    decimals = 1
+  ) |>
+  tab_options(
+    table.background.color = BG,
+    heading.background.color = BG,
+    column_labels.background.color = BG,
+    table.border.top.color = GRID,
+    table.border.bottom.color = GRID,
+    column_labels.border.top.color = GRID,
+    column_labels.border.bottom.color = GRID,
+    table.font.names = c("Arial", "Helvetica", "sans-serif"),
+    table.font.size = px(14),
+    heading.title.font.size = px(22),
+    heading.subtitle.font.size = px(14),
+    data_row.padding = px(7)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = player)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  miami_return_metrics_table,
+  file.path(dir_tables, "miami_return_metrics_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 3. Playoff results table
+# -------------------------------------------------------------------------
+
+playoff_results_article_table <- bucks_playoffs_clean |>
+  mutate(
+    article_read = case_when(
+      season == "2016-17" ~ "First playoff taste of the Giannis era",
+      season == "2017-18" ~ "Still building around the rising star",
+      season == "2018-19" ~ "First true title-level team",
+      season == "2019-20" ~ "Elite regular season did not translate in the bubble",
+      season == "2020-21" ~ "Title breakthrough",
+      season == "2021-22" ~ "Middleton injury changed the ceiling",
+      season == "2022-23" ~ "58-win team, but cracks showed",
+      season == "2023-24" ~ "Giannis injury, Dame era never stabilized",
+      season == "2024-25" ~ "Dame Achilles, window effectively closed",
+      TRUE ~ notes
+    )
+  ) |>
+  select(season, result, opponent, record, article_read) |>
+  gt() |>
+  tab_header(
+    title = md("**The Playoff Ceiling Closed Quickly After the Title**"),
+    subtitle = "Milwaukee won the championship in 2021, then never got back past Round 2"
   ) |>
   cols_label(
     season = "Season",
-    event_type = "Type",
-    event = "Event",
-    notes = "Notes"
+    result = "Result",
+    opponent = "Opponent",
+    record = "Series",
+    article_read = "What It Meant"
+  ) |>
+  cols_width(
+    season ~ px(90),
+    result ~ px(120),
+    opponent ~ px(120),
+    record ~ px(90),
+    article_read ~ px(430)
+  ) |>
+  tab_options(
+    table.background.color = BG,
+    heading.background.color = BG,
+    column_labels.background.color = BG,
+    table.border.top.color = GRID,
+    table.border.bottom.color = GRID,
+    column_labels.border.top.color = GRID,
+    column_labels.border.bottom.color = GRID,
+    table.font.names = c("Arial", "Helvetica", "sans-serif"),
+    table.font.size = px(15),
+    heading.title.font.size = px(22),
+    heading.subtitle.font.size = px(14),
+    data_row.padding = px(7)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = season)
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_MID, size = px(13)),
+    locations = cells_body(columns = article_read)
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  playoff_results_article_table,
+  file.path(dir_tables, "playoff_results_article_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 4. Miami shooting table
+# -------------------------------------------------------------------------
+
+miami_shooting_table <- databallr_profiles_clean |>
+  mutate(
+    three_pr_pctile = case_when(
+      player == "Tyler Herro" ~ 26,
+      player == "Kasparas Jakucionis" ~ 93,
+      player == "Kel'el Ware" ~ 88,
+      player == "Jaime Jaquez Jr." ~ 3,
+      TRUE ~ NA_real_
+    ),
+    three_pct_pctile = case_when(
+      player == "Tyler Herro" ~ 64,
+      player == "Kasparas Jakucionis" ~ 98,
+      player == "Kel'el Ware" ~ 88,
+      player == "Jaime Jaquez Jr." ~ 20,
+      TRUE ~ NA_real_
+    ),
+    player = factor(
+      player,
+      levels = c(
+        "Tyler Herro",
+        "Kasparas Jakucionis",
+        "Kel'el Ware",
+        "Jaime Jaquez Jr."
+      )
+    ),
+    shooting_read = case_when(
+      player == "Tyler Herro" ~ "Known volume spacer",
+      player == "Kasparas Jakucionis" ~ "Best shooting signal in the return",
+      player == "Kel'el Ware" ~ "Rare spacing indicator for a young big",
+      player == "Jaime Jaquez Jr." ~ "Main shooting swing question",
+      TRUE ~ ""
+    )
+  ) |>
+  arrange(player) |>
+  select(
+    player,
+    three_pr,
+    three_pr_pctile,
+    three_pct,
+    three_pct_pctile,
+    shooting_read
+  ) |>
+  gt() |>
+  tab_header(
+    title = md("**The Cleanest Skill Signal Is Shooting**"),
+    subtitle = "3-point rate and 3-point percentage, with positional percentile ranks"
+  ) |>
+  cols_label(
+    player = "Player",
+    three_pr = "3Pr",
+    three_pr_pctile = "3Pr %ile",
+    three_pct = "3P%",
+    three_pct_pctile = "3P% %ile",
+    shooting_read = "Read"
+  ) |>
+  fmt_number(columns = three_pr, decimals = 2) |>
+  fmt_number(columns = three_pct, decimals = 1) |>
+  fmt_number(columns = c(three_pr_pctile, three_pct_pctile), decimals = 0) |>
+  tab_options(
+    table.background.color = BG,
+    heading.background.color = BG,
+    column_labels.background.color = BG,
+    table.border.top.color = GRID,
+    table.border.bottom.color = GRID,
+    column_labels.border.top.color = GRID,
+    column_labels.border.bottom.color = GRID,
+    table.font.names = c("Arial", "Helvetica", "sans-serif"),
+    table.font.size = px(15),
+    heading.title.font.size = px(22),
+    heading.subtitle.font.size = px(14),
+    data_row.padding = px(8)
+  ) |>
+  data_color(
+    columns = c(three_pr_pctile, three_pct_pctile),
+    method = "numeric",
+    palette = c("#F2DFD8", "#F3E7C9", "#D7E8D2", "#A8D5A2")
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = player)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_MID, size = px(13)),
+    locations = cells_body(columns = shooting_read)
+  ) |>
+  tab_source_note(
+    source_note = md(
+      "Source: DataBallr | Percentile ranks are based on positional-ranked percentiles."
+    )
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  miami_shooting_table,
+  file.path(dir_tables, "miami_shooting_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 5. DataBallr playtype table
+# -------------------------------------------------------------------------
+
+databallr_playtype_table <- databallr_playtypes_clean |>
+  arrange(player, desc(rts_impact)) |>
+  gt(groupname_col = "player") |>
+  tab_header(
+    title = "DataBallr Playtype Snapshot",
+    subtitle = "Frequency and rTS impact by playtype"
+  ) |>
+  cols_label(
+    playtype = "Playtype",
+    freq = "Freq%",
+    rts_impact = "rTS Impact",
+    impact_bucket = "Impact Bucket"
+  ) |>
+  fmt_number(columns = c(freq, rts_impact), decimals = 1) |>
+  gt_bucks_theme()
+
+gtsave(
+  databallr_playtype_table,
+  file.path(dir_tables, "databallr_playtype_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 6. Draft prospects table
+# -------------------------------------------------------------------------
+
+draft_prospects_table <- draft_prospects_clean |>
+  select(
+    player, prospect_type, ppg, rpg, apg, tov,
+    two_fg_pct, three_fg_pct, ft_pct, mock_pos
+  ) |>
+  gt() |>
+  tab_header(
+    title = md("**The Lottery Swings**"),
+    subtitle = "Burries brings immediate impact and transition scoring; Ament is the higher-variance ceiling bet"
+  ) |>
+  cols_label(
+    player = "Player",
+    prospect_type = "Type",
+    ppg = "PPG",
+    rpg = "RPG",
+    apg = "APG",
+    tov = "TOV",
+    two_fg_pct = "2FG%",
+    three_fg_pct = "3FG%",
+    ft_pct = "FT%",
+    mock_pos = "Mock"
+  ) |>
+  fmt_number(columns = c(ppg, rpg, apg, tov), decimals = 1) |>
+  fmt_percent(columns = c(two_fg_pct, three_fg_pct, ft_pct), decimals = 1) |>
+  cols_width(
+    player ~ px(150),
+    prospect_type ~ px(190),
+    ppg ~ px(65),
+    rpg ~ px(65),
+    apg ~ px(65),
+    tov ~ px(65),
+    two_fg_pct ~ px(75),
+    three_fg_pct ~ px(75),
+    ft_pct ~ px(75),
+    mock_pos ~ px(170)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = player)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = BUCKS_GREEN),
+    locations = cells_body(columns = prospect_type)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
   ) |>
   gt_bucks_theme()
 
-gtsave(giannis_awards_table, file.path(dir_tables, "giannis_awards_table.html"))
+gtsave(
+  draft_prospects_table,
+  file.path(dir_tables, "draft_prospects_table.html")
+)
 
 # -------------------------------------------------------------------------
-# 2. Bucks team results table
+# 7. Future pick control table
+# -------------------------------------------------------------------------
+
+appendix_future_pick_control_table <- future_picks_clean |>
+  group_by(year, round) |>
+  summarise(
+    status = paste(unique(status), collapse = " / "),
+    bucks_result = paste(unique(bucks_pick_result), collapse = "; "),
+    incoming_from = paste(unique(na.omit(incoming_from[incoming_from != ""])), collapse = ", "),
+    outgoing_to = paste(unique(na.omit(outgoing_to[outgoing_to != ""])), collapse = ", "),
+    read = paste(unique(report_label), collapse = "; "),
+    .groups = "drop"
+  ) |>
+  mutate(
+    incoming_from = na_if(incoming_from, ""),
+    outgoing_to = na_if(outgoing_to, "")
+  ) |>
+  arrange(year, round) |>
+  gt(groupname_col = "year") |>
+  tab_header(
+    title = md("**Future Pick Control**"),
+    subtitle = "The reset added Miami upside, but 2027-30 are still shaped by old obligations"
+  ) |>
+  cols_label(
+    round = "Round",
+    status = "Status",
+    bucks_result = "Bucks Pick Result",
+    incoming_from = "Incoming From",
+    outgoing_to = "Outgoing To",
+    read = "Article Read"
+  ) |>
+  cols_width(
+    round ~ px(70),
+    status ~ px(150),
+    bucks_result ~ px(210),
+    incoming_from ~ px(150),
+    outgoing_to ~ px(150),
+    read ~ px(330)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_column_labels(columns = everything())
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = BUCKS_GREEN),
+    locations = cells_body(columns = round)
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  appendix_future_pick_control_table,
+  file.path(dir_tables, "appendix_future_pick_control_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 7A. Future pick control article table
+# -------------------------------------------------------------------------
+future_pick_article_table <- future_picks_clean |>
+  mutate(
+    year = as.integer(year),
+    round = as.character(round)
+  ) |>
+  group_by(year) |>
+  summarise(
+    first_round_control = paste(
+      unique(report_label[round == "1st"]),
+      collapse = "; "
+    ),
+    second_round_control = paste(
+      unique(report_label[round == "2nd"]),
+      collapse = "; "
+    ),
+    .groups = "drop"
+  ) |>
+  mutate(
+    first_round_control = na_if(first_round_control, ""),
+    second_round_control = na_if(second_round_control, ""),
+    article_read = case_when(
+      year %in% 2027:2029 ~ "Old obligations still limit the bottom-out path",
+      year == 2030 ~ "Miami upside starts to matter, but control is still partial",
+      year %in% c(2031, 2033) ~ "Incoming Miami first plus own first creates real optionality",
+      year == 2032 ~ "Clean own first, but no extra Miami first",
+      TRUE ~ "Limited or unclear control"
+    )
+  ) |>
+  arrange(year) |>
+  gt() |>
+  tab_header(
+    title = md("**The Pick Situation Is Still Bleak**"),
+    subtitle = "Miami adds upside, but Milwaukee remains without clear control of its own first until 2031"
+  ) |>
+  cols_label(
+    year = "Year",
+    first_round_control = "1st-Round Control",
+    second_round_control = "2nd-Round Control",
+    article_read = "Read"
+  ) |>
+  cols_width(
+    year ~ px(80),
+    first_round_control ~ px(300),
+    second_round_control ~ px(220),
+    article_read ~ px(360)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = year)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = BUCKS_GREEN),
+    locations = cells_body(columns = first_round_control)
+  ) |>
+  tab_style(
+    style = cell_text(color = TEXT_MID, size = px(13)),
+    locations = cells_body(columns = article_read)
+  ) |>
+  sub_missing(columns = everything(), missing_text = "") |>
+  gt_bucks_theme()
+
+gtsave(
+  future_pick_article_table,
+  file.path(dir_tables, "future_pick_article_table.html")
+)
+
+# -------------------------------------------------------------------------
+# 8. Reset paths table
+# -------------------------------------------------------------------------
+
+reset_paths_table <- tibble(
+  path = c("Best case", "Good case", "Flat case", "Bad case"),
+  what_has_to_happen = c(
+    "Ware becomes a two-way frontcourt anchor, Ament's flashes become structure, Burries becomes a high-level two-way starter, and Kasparas hits as a connector/playmaker.",
+    "Burries and Rollins give Milwaukee a credible two-way backcourt, Ware becomes a useful rim-protecting spacer, Ament is playable in smaller doses, and Kasparas becomes a rotation connector.",
+    "Burries is solid, Ware flashes but never stabilizes, Ament remains more projection than production, and Kasparas is useful but capped athletically.",
+    "Ament's feel and efficiency concerns win out, Ware's motor and processing habits harden, Burries lacks enough self-creation to scale, and Kasparas cannot separate athletically."
+  ),
+  article_read = c(
+    "A real post-Giannis foundation emerges.",
+    "A credible reset, even without a franchise player yet.",
+    "Not hopeless, but missing the ceiling piece.",
+    "The danger zone: young talent, but no clear engine."
+  )
+) |>
+  gt() |>
+  tab_header(
+    title = md("**What the Reset Can Become**"),
+    subtitle = "Milwaukee has multiple bets, but each comes with a different point of concern"
+  ) |>
+  cols_label(
+    path = "Path",
+    what_has_to_happen = "What Has to Happen",
+    article_read = "Read"
+  ) |>
+  cols_width(
+    path ~ px(120),
+    what_has_to_happen ~ px(590),
+    article_read ~ px(270)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = TEXT_DARK),
+    locations = cells_body(columns = path)
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold", color = BUCKS_GREEN),
+    locations = cells_body(columns = article_read)
+  ) |>
+  gt_bucks_theme()
+
+gtsave(
+  reset_paths_table,
+  file.path(dir_tables, "reset_paths_table.html")
+)
+
+# -------------------------------------------------------------------------
+# Appendix tables
 # -------------------------------------------------------------------------
 
 team_results_table <- bucks_team_results_clean |>
@@ -37,7 +695,7 @@ team_results_table <- bucks_team_results_clean |>
   ) |>
   gt() |>
   tab_header(
-    title = "Bucks Year-by-Year Team Results",
+    title = "Appendix: Bucks Year-by-Year Team Results",
     subtitle = "Regular-season record, ratings, and playoff finish during the Giannis era"
   ) |>
   cols_label(
@@ -57,11 +715,10 @@ team_results_table <- bucks_team_results_clean |>
   fmt_number(columns = c(ortg, drtg, net, srs, pace), decimals = 1) |>
   gt_bucks_theme()
 
-gtsave(team_results_table, file.path(dir_tables, "team_results_table.html"))
-
-# -------------------------------------------------------------------------
-# 3. Transaction timeline table
-# -------------------------------------------------------------------------
+gtsave(
+  team_results_table,
+  file.path(dir_tables, "appendix_team_results_table.html")
+)
 
 transaction_summary_table <- transaction_timeline_clean |>
   transmute(
@@ -76,7 +733,7 @@ transaction_summary_table <- transaction_timeline_clean |>
   ) |>
   gt() |>
   tab_header(
-    title = "Milwaukee's Window-Shaping Moves",
+    title = "Appendix: Milwaukee's Window-Shaping Moves",
     subtitle = "Major draft, trade, and roster decisions from Giannis' arrival through the reset"
   ) |>
   cols_label(
@@ -93,170 +750,30 @@ transaction_summary_table <- transaction_timeline_clean |>
   sub_missing(columns = everything(), missing_text = "") |>
   gt_bucks_theme()
 
-gtsave(transaction_summary_table, file.path(dir_tables, "transaction_summary_table.html"))
-
-# -------------------------------------------------------------------------
-# 4. Future picks table
-# -------------------------------------------------------------------------
-
-future_picks_table <- future_picks_clean |>
-  select(
-    year, round, status, bucks_pick_result,
-    outgoing_to, incoming_from, report_label
-  ) |>
-  gt(groupname_col = "year") |>
-  tab_header(
-    title = "Future Pick Control",
-    subtitle = "The reset added Miami upside, but prior obligations still limit clean control"
-  ) |>
-  cols_label(
-    round = "Round",
-    status = "Status",
-    bucks_pick_result = "Bucks Pick Result",
-    outgoing_to = "Outgoing To",
-    incoming_from = "Incoming From",
-    report_label = "Report Label"
-  ) |>
-  sub_missing(columns = everything(), missing_text = "") |>
-  gt_bucks_theme()
-
-gtsave(future_picks_table, file.path(dir_tables, "future_picks_table.html"))
-
-# -------------------------------------------------------------------------
-# 5. Current roster table
-# -------------------------------------------------------------------------
-
-current_roster_table <- current_roster_clean |>
-  select(player, pos, age, height, weight, salary_raw, roster_bucket) |>
-  gt() |>
-  tab_header(
-    title = "Current Bucks Roster Snapshot",
-    subtitle = "Age, size, salary, and broad roster bucket"
-  ) |>
-  cols_label(
-    player = "Player",
-    pos = "Pos",
-    age = "Age",
-    height = "Height",
-    weight = "Weight",
-    salary_raw = "Salary",
-    roster_bucket = "Roster Bucket"
-  ) |>
-  fmt_number(columns = age, decimals = 1) |>
-  sub_missing(columns = everything(), missing_text = "") |>
-  gt_bucks_theme()
-
-gtsave(current_roster_table, file.path(dir_tables, "current_roster_table.html"))
-
-# -------------------------------------------------------------------------
-# 6. Young NBA pieces table
-# -------------------------------------------------------------------------
-
-young_pieces_table <- young_pieces_clean |>
-  select(player, player_type, ppg, rpg, apg, ts_pct, usg_pct, mpg) |>
-  gt() |>
-  tab_header(
-    title = "Young NBA Pieces",
-    subtitle = "Recent production for Milwaukee's young and bridge pieces"
-  ) |>
-  cols_label(
-    player = "Player",
-    player_type = "Role Label",
-    ppg = "PPG",
-    rpg = "RPG",
-    apg = "APG",
-    ts_pct = "TS%",
-    usg_pct = "USG%",
-    mpg = "MPG"
-  ) |>
-  fmt_number(columns = c(ppg, rpg, apg, mpg), decimals = 1) |>
-  fmt_percent(columns = c(ts_pct, usg_pct), decimals = 1) |>
-  gt_bucks_theme()
-
-gtsave(young_pieces_table, file.path(dir_tables, "young_pieces_table.html"))
-
-# -------------------------------------------------------------------------
-# 7. Draft prospects table
-# -------------------------------------------------------------------------
-
-draft_prospects_table <- draft_prospects_clean |>
-  select(
-    player, prospect_type, ppg, rpg, apg, tov,
-    two_fg_pct, three_fg_pct, ft_pct, mock_pos
-  ) |>
-  gt() |>
-  tab_header(
-    title = "Incoming Draft Prospects",
-    subtitle = "Manual prospect production snapshot"
-  ) |>
-  cols_label(
-    player = "Player",
-    prospect_type = "Prospect Type",
-    ppg = "PPG",
-    rpg = "RPG",
-    apg = "APG",
-    tov = "TOV",
-    two_fg_pct = "2FG%",
-    three_fg_pct = "3FG%",
-    ft_pct = "FT%",
-    mock_pos = "Mock Position"
-  ) |>
-  fmt_number(columns = c(ppg, rpg, apg, tov), decimals = 1) |>
-  fmt_percent(columns = c(two_fg_pct, three_fg_pct, ft_pct), decimals = 1) |>
-  gt_bucks_theme()
-
-gtsave(draft_prospects_table, file.path(dir_tables, "draft_prospects_table.html"))
-
-# -------------------------------------------------------------------------
-# 8. Giannis on/off table
-# -------------------------------------------------------------------------
-
-giannis_on_off_table <- giannis_on_off_clean |>
-  select(
-    status, minutes, ortg, drtg, net,
-    two_fg_pct, three_fg_pct, opp_two_fg_pct, opp_three_fg_pct
-  ) |>
-  gt() |>
-  tab_header(
-    title = "Giannis On/Off Since First MVP",
-    subtitle = "Milwaukee's minutes with and without Giannis after he became the franchise's MVP-level anchor"
-  ) |>
-  cols_label(
-    status = "Status",
-    minutes = "Minutes",
-    ortg = "ORTG",
-    drtg = "DRTG",
-    net = "Net",
-    two_fg_pct = "2FG%",
-    three_fg_pct = "3FG%",
-    opp_two_fg_pct = "Opp 2FG%",
-    opp_three_fg_pct = "Opp 3FG%"
-  ) |>
-  fmt_number(columns = c(minutes), decimals = 0) |>
-  fmt_number(columns = c(ortg, drtg, net), decimals = 1) |>
-  fmt_percent(
-    columns = c(two_fg_pct, three_fg_pct, opp_two_fg_pct, opp_three_fg_pct),
-    decimals = 1
-  ) |>
-  gt_bucks_theme()
-
-gtsave(giannis_on_off_table, file.path(dir_tables, "giannis_on_off_table.html"))
+gtsave(
+  transaction_summary_table,
+  file.path(dir_tables, "appendix_transaction_summary_table.html")
+)
 
 # -------------------------------------------------------------------------
 # Save table object list
 # -------------------------------------------------------------------------
 
 report_tables <- list(
-  giannis_awards_table = giannis_awards_table,
-  team_results_table = team_results_table,
-  transaction_summary_table = transaction_summary_table,
-  future_picks_table = future_picks_table,
-  current_roster_table = current_roster_table,
-  young_pieces_table = young_pieces_table,
+  giannis_accomplishments_table = giannis_accomplishments_table,
+  playoff_results_article_table = playoff_results_article_table,
+  miami_return_profile_table = miami_return_profile_table,
+  miami_return_metrics_table = miami_return_metrics_table,
+  miami_shooting_table = miami_shooting_table,
+  databallr_playtype_table = databallr_playtype_table,
   draft_prospects_table = draft_prospects_table,
-  giannis_on_off_table = giannis_on_off_table
+  future_pick_article_table = future_pick_article_table,
+  appendix_future_pick_control_table = appendix_future_pick_control_table,
+  reset_paths_table = reset_paths_table,
+  appendix_team_results_table = team_results_table,
+  appendix_transaction_summary_table = transaction_summary_table
 )
 
 saveRDS(report_tables, file.path(dir_processed, "report_tables.rds"))
 
-message("Summary tables built and saved to outputs/tables.")
+message("Curated summary tables built and saved to outputs/tables.")

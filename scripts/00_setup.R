@@ -77,21 +77,14 @@ POSITIVE <- BUCKS_GREEN
 NEGATIVE <- "#9B2C2C"
 NEUTRAL <- "#7A746A"
 
-ERA_COLORS <- c(
-  "Development" = BUCKS_CREAM,
-  "MVP rise" = BUCKS_BLUE,
-  "Peak/title window" = BUCKS_GREEN,
-  "Post-title chase" = "#6F6259",
-  "Final Milwaukee years" = "#9B2C2C"
+PHASE_COLORS <- c(
+  "Foundation" = "#D8C59A",
+  "Rise" = BUCKS_BLUE,
+  "Title window" = BUCKS_GREEN,
+  "Writing on wall" = "#9B2C2C"
 )
 
-PICK_COLORS <- c(
-  "Incoming" = BUCKS_GREEN,
-  "Retained" = BUCKS_BLUE,
-  "Swap/limited control" = "#B88746",
-  "Outgoing" = "#9B2C2C",
-  "Other" = NEUTRAL
-)
+ERA_COLORS <- PHASE_COLORS
 
 ROSTER_COLORS <- c(
   "Trade return" = BUCKS_GREEN,
@@ -100,78 +93,79 @@ ROSTER_COLORS <- c(
   "Veteran" = "#6F6259"
 )
 
+PICK_COLORS <- c(
+  "Incoming" = BUCKS_GREEN,
+  "Retained" = BUCKS_BLUE,
+  "Incoming/retained" = "#008C5A",
+  "Swap/limited control" = "#B88746",
+  "Outgoing" = "#9B2C2C",
+  "Mixed/limited" = "#6F6259",
+  "Other" = NEUTRAL
+)
+
 # -------------------------------------------------------------------------
 # ggplot theme
 # -------------------------------------------------------------------------
 
 theme_caleb_elevated <- function(
     base_family = "Inter",
-    base_size = 12,
-    grid = "x",
+    base_size = 16,
+    grid = "y",
     legend = "none"
 ) {
-  major_x <- if (grid %in% c("x", "both")) {
-    element_line(color = GRID, linewidth = 0.35)
-  } else {
-    element_blank()
-  }
-
-  major_y <- if (grid %in% c("y", "both")) {
-    element_line(color = GRID, linewidth = 0.35)
-  } else {
-    element_blank()
-  }
+  grid_x <- grid %in% c("x", "both")
+  grid_y <- grid %in% c("y", "both")
 
   theme_minimal(base_family = base_family, base_size = base_size) +
     theme(
       plot.background = element_rect(fill = BG, color = NA),
       panel.background = element_rect(fill = BG, color = NA),
 
-      panel.grid.major.x = major_x,
-      panel.grid.major.y = major_y,
-      panel.grid.minor = element_blank(),
-
       plot.title = element_text(
-        size = 20,
-        face = "bold",
-        hjust = 0.5,
         color = TEXT_DARK,
-        margin = margin(b = 4)
+        face = "bold",
+        size = base_size + 5,
+        hjust = 0.5,
+        margin = margin(b = 8)
       ),
       plot.subtitle = element_text(
-        size = 11,
-        hjust = 0.5,
         color = TEXT_MID,
-        margin = margin(b = 12)
+        size = base_size - 1,
+        hjust = 0.5,
+        margin = margin(b = 22)
       ),
       plot.caption = element_text(
-        size = 8.5,
         color = TEXT_LIGHT,
+        size = base_size - 5,
         hjust = 1,
-        margin = margin(t = 8)
+        margin = margin(t = 18)
       ),
 
-      axis.title.x = element_text(
-        size = 12,
-        face = "bold",
+      axis.title = element_text(
         color = TEXT_DARK,
-        margin = margin(t = 8)
-      ),
-      axis.title.y = element_text(
-        size = 12,
         face = "bold",
-        color = TEXT_DARK,
-        margin = margin(r = 8)
+        size = base_size - 1
       ),
-
-      axis.text.x = element_text(size = 10, color = "#4A4A4A"),
-      axis.text.y = element_text(size = 11, face = "bold", color = "#4A4A4A"),
+      axis.text = element_text(
+        color = TEXT_DARK,
+        size = base_size - 2
+      ),
 
       legend.position = legend,
-      legend.title = element_text(face = "bold", color = TEXT_DARK),
-      legend.text = element_text(color = TEXT_MID),
+      legend.title = element_blank(),
+      legend.text = element_text(color = TEXT_DARK, size = base_size - 3),
 
-      plot.margin = margin(12, 32, 14, 14)
+      panel.grid.major.x = if (grid_x) element_line(color = GRID, linewidth = 0.55) else element_blank(),
+      panel.grid.major.y = if (grid_y) element_line(color = GRID, linewidth = 0.55) else element_blank(),
+      panel.grid.minor = element_blank(),
+
+      strip.text = element_text(
+        color = TEXT_DARK,
+        face = "bold",
+        size = base_size
+      ),
+
+      plot.margin = margin(20, 28, 20, 28)
     )
 }
 
@@ -240,7 +234,7 @@ gt_bucks_theme <- function(gt_tbl) {
       table.background.color = BG,
       heading.background.color = BG,
       column_labels.background.color = BG,
-      table.font.names = "Inter",
+      table.font.names = c("Arial", "Helvetica", "sans-serif"),
       table.font.size = px(13),
       heading.title.font.size = px(18),
       heading.subtitle.font.size = px(12),

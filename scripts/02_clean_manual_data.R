@@ -73,6 +73,107 @@ giannis_on_off_clean <- giannis_on_off_raw |>
 save_processed(giannis_on_off_clean, "giannis_on_off_clean.csv")
 
 # -------------------------------------------------------------------------
+# 3B. Giannis Bucks accomplishments
+# -------------------------------------------------------------------------
+
+giannis_accomplishments_clean <- giannis_accomplishments_raw |>
+  mutate(
+    accomplishment = clean_text(accomplishment),
+    value = clean_text(value),
+    notes = clean_text(notes),
+
+    # Clean display labels
+    accomplishment = case_when(
+      accomplishment == "NBA Cup MVPs" ~ "NBA Cup MVP",
+      accomplishment == "MIP" ~ "Most Improved Player",
+      TRUE ~ accomplishment
+    ),
+
+    # Clean note labels for readability
+    notes = case_when(
+      accomplishment == "All-NBA selections" ~ "7x First Team, 2x Second Team",
+      accomplishment == "All-Defense selections" ~ "4x First Team, 1x Second Team",
+      accomplishment == "25+ PPG seasons" ~ "2017-18 through 2025-26",
+      accomplishment == "40-point games" ~ "56 regular season, 8 playoffs",
+      accomplishment == "50-point games" ~ "9 regular season, 1 playoffs",
+      accomplishment == "60-point games" ~ "1 regular season",
+      TRUE ~ notes
+    ),
+
+    value_num = suppressWarnings(as.numeric(value)),
+
+    accomplishment_group = case_when(
+      accomplishment %in% c(
+        "Championships",
+        "NBA Cup Championships"
+      ) ~ "Team accomplishments",
+
+      accomplishment %in% c(
+        "MVPs",
+        "Finals MVPs",
+        "NBA Cup MVP",
+        "Most Improved Player",
+        "Defensive Player of the Year"
+      ) ~ "Major awards",
+
+      accomplishment %in% c(
+        "All-NBA selections",
+        "All-Star selections",
+        "All-Defense selections"
+      ) ~ "All-league recognition",
+
+      accomplishment %in% c(
+        "25+ PPG seasons",
+        "40-point games",
+        "50-point games",
+        "60-point games",
+        "Playoff series wins",
+        "Playoff wins"
+      ) ~ "Scoring and playoff production",
+
+      TRUE ~ "Other"
+    ),
+
+    accomplishment_group = factor(
+      accomplishment_group,
+      levels = c(
+        "Team accomplishments",
+        "Major awards",
+        "All-league recognition",
+        "Scoring and playoff production",
+        "Other"
+      )
+    ),
+
+    accomplishment_order = case_when(
+      accomplishment == "Championships" ~ 1,
+      accomplishment == "NBA Cup Championships" ~ 2,
+
+      accomplishment == "MVPs" ~ 1,
+      accomplishment == "Finals MVPs" ~ 2,
+      accomplishment == "Defensive Player of the Year" ~ 3,
+      accomplishment == "Most Improved Player" ~ 4,
+      accomplishment == "NBA Cup MVP" ~ 5,
+
+      accomplishment == "All-Star selections" ~ 1,
+      accomplishment == "All-NBA selections" ~ 2,
+      accomplishment == "All-Defense selections" ~ 3,
+
+      accomplishment == "25+ PPG seasons" ~ 1,
+      accomplishment == "Playoff series wins" ~ 2,
+      accomplishment == "Playoff wins" ~ 3,
+      accomplishment == "40-point games" ~ 4,
+      accomplishment == "50-point games" ~ 5,
+      accomplishment == "60-point games" ~ 6,
+
+      TRUE ~ 99
+    )
+  ) |>
+  arrange(accomplishment_group, accomplishment_order)
+
+save_processed(giannis_accomplishments_clean, "giannis_accomplishments_clean.csv")
+
+# -------------------------------------------------------------------------
 # 4. Bucks team results
 # -------------------------------------------------------------------------
 
@@ -212,11 +313,26 @@ current_roster_clean <- current_roster_raw |>
       player %in% c("Brayden Burries", "Nate Ament") ~ "2026 draft",
       age <= 26 ~ "Young/bridge piece",
       TRUE ~ "Veteran"
+    ),
+    future_relevant = case_when(
+      player %in% c("Kyle Kuzma", "Myles Turner", "Kevin Porter Jr.") ~ FALSE,
+      TRUE ~ TRUE
     )
   ) |>
   arrange(age)
 
 save_processed(current_roster_clean, "current_roster_clean.csv")
+
+# Functional/future-relevant roster age summary for article framing
+roster_age_summary_clean <- current_roster_clean |>
+  summarise(
+    full_roster_avg_age = mean(age, na.rm = TRUE),
+    future_relevant_avg_age = mean(age[future_relevant], na.rm = TRUE),
+    full_roster_count = n(),
+    future_relevant_count = sum(future_relevant, na.rm = TRUE)
+  )
+
+save_processed(roster_age_summary_clean, "roster_age_summary_clean.csv")
 
 # -------------------------------------------------------------------------
 # 9. Young NBA pieces
@@ -267,14 +383,79 @@ draft_prospects_clean <- draft_prospects_raw |>
     fta = as.numeric(fta),
     mock_pos = clean_text(mock_pos),
     prospect_type = case_when(
-      player == "Nate Ament" ~ "Big wing upside",
-      player == "Brayden Burries" ~ "Scoring guard/wing",
+      player == "Nate Ament" ~ "Big shooting wing upside",
+      player == "Brayden Burries" ~ "Two-way combo guard",
       TRUE ~ "Draft prospect"
     )
   ) |>
   arrange(player)
 
 save_processed(draft_prospects_clean, "draft_prospects_clean.csv")
+
+# -------------------------------------------------------------------------
+# 10B. DataBallr player profiles
+# -------------------------------------------------------------------------
+
+databallr_profiles_clean <- databallr_profiles_raw |>
+  mutate(
+    player = clean_text(player),
+    pos = clean_text(pos),
+    across(
+      c(
+        dpm, o_dpm, d_dpm, orapm, drapm, rapm, min,
+        shots, rts, stov, owmiss, potast, astefg, passtov,
+        three_pr, three_pr_pctile, three_pct, three_pct_pctile,
+        ftr, teammiss, onball, pa_1m, rimast,
+        dfga, diff, drb_pct, stl, offd, blk, rimdfga, rim_diff,
+        lballs, stop_pct, rtov, defl
+      ),
+      ~ suppressWarnings(as.numeric(.x))
+    ),
+    role_label = case_when(
+      player == "Tyler Herro" ~ "Offensive stabilizer",
+      player == "Jaime Jaquez Jr." ~ "Connector wing",
+      player == "Kel'el Ware" ~ "Upside big",
+      player == "Kasparas Jakucionis" ~ "Skill guard bet",
+      TRUE ~ "Young piece"
+    ),
+    main_read = case_when(
+      player == "Tyler Herro" ~ "High-volume scoring and spacing bridge with defensive limitations",
+      player == "Jaime Jaquez Jr." ~ "Safe rotation profile with on-ball feel and shooting questions",
+      player == "Kel'el Ware" ~ "Athletic big with shooting, rebounding, and rim-protection indicators",
+      player == "Kasparas Jakucionis" ~ "Shooting signal with guard-skill development questions",
+      TRUE ~ NA_character_
+    ),
+    swing_skill = case_when(
+      player == "Tyler Herro" ~ "Defense and playmaking scalability",
+      player == "Jaime Jaquez Jr." ~ "Three-point shooting",
+      player == "Kel'el Ware" ~ "Motor, strength, and defensive consistency",
+      player == "Kasparas Jakucionis" ~ "Creation and finishing",
+      TRUE ~ NA_character_
+    )
+  )
+
+save_processed(databallr_profiles_clean, "databallr_profiles_clean.csv")
+
+# -------------------------------------------------------------------------
+# 10C. DataBallr playtypes
+# -------------------------------------------------------------------------
+
+databallr_playtypes_clean <- databallr_playtypes_raw |>
+  mutate(
+    player = clean_text(player),
+    playtype = clean_text(playtype),
+    freq = as.numeric(freq),
+    rts_impact = as.numeric(rts_impact),
+    impact_bucket = case_when(
+      rts_impact >= 5 ~ "Strong positive",
+      rts_impact > 0 ~ "Positive",
+      rts_impact == 0 ~ "Neutral",
+      rts_impact < 0 ~ "Negative",
+      TRUE ~ "Unknown"
+    )
+  )
+
+save_processed(databallr_playtypes_clean, "databallr_playtypes_clean.csv")
 
 # -------------------------------------------------------------------------
 # 11. Combined new-core table
@@ -312,9 +493,18 @@ new_core_clean <- bind_rows(
 ) |>
   left_join(
     current_roster_clean |>
-      select(player, age, pos, salary_millions, roster_bucket),
+      select(player, age, pos, salary_millions, roster_bucket, future_relevant),
     by = "player"
   ) |>
+  left_join(
+    databallr_profiles_clean |>
+      select(player, databallr_role = role_label, main_read, swing_skill),
+    by = "player"
+  ) |>
+  mutate(
+    role_label = coalesce(databallr_role, role_label)
+  ) |>
+  select(-databallr_role) |>
   arrange(age, desc(ppg))
 
 save_processed(new_core_clean, "new_core_clean.csv")
