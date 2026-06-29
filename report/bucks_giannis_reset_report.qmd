@@ -1,15 +1,15 @@
 ---
-title: "Milwaukee Moved On From Giannis. Now What?"
-subtitle: "The Bucks ended the greatest era in franchise history, but the reset they created is more complicated than a clean rebuild."
-author: "Caleb Ramsey"
-date: today
+title: "The Milwaukee Bucks Post-Giannis"
 format:
-  html:
-    toc: true
-    toc-depth: 2
-    theme: cosmo
-    embed-resources: true
-    code-fold: true
+  pdf:
+    toc: false
+    number-sections: false
+    fig-align: center
+    fig-width: 8
+    fig-height: 5
+    documentclass: article
+    geometry:
+      - margin=0.8in
 execute:
   echo: false
   warning: false
@@ -20,184 +20,198 @@ execute:
 library(tidyverse)
 library(htmltools)
 library(gt)
+library(knitr)
 
-source("scripts/00_setup.R")
+# -------------------------------------------------------------------------
+# Force project root
+# -------------------------------------------------------------------------
 
-fig_dir <- "outputs/figures"
-table_dir <- "outputs/tables"
+project_root <- normalizePath(
+  "C:/Users/caleb/Downloads/bucks-giannis-era-reset",
+  winslash = "/",
+  mustWork = TRUE
+)
 
-include_table <- function(file) {
-  htmltools::includeHTML(file.path(table_dir, file))
-}
+fig_dir <- file.path(project_root, "outputs", "figures")
+table_dir <- file.path(project_root, "outputs", "tables")
+
+message("Project root: ", project_root)
+message("Figure directory: ", fig_dir)
+message("Table directory: ", table_dir)
+
+message("Available figures: ", paste(list.files(fig_dir), collapse = ", "))
+message("Available tables: ", paste(list.files(table_dir), collapse = ", "))
+
+# -------------------------------------------------------------------------
+# Helpers
+# -------------------------------------------------------------------------
 
 fig_path <- function(file) {
-  file.path(fig_dir, file)
+  path <- file.path(fig_dir, file)
+
+  if (!file.exists(path)) {
+    stop(
+      "Figure not found: ", path, "\n\n",
+      "Available figures:\n",
+      paste(list.files(fig_dir), collapse = "\n")
+    )
+  }
+
+  normalizePath(path, winslash = "/", mustWork = TRUE)
+}
+
+include_table <- function(file_stub, height = "520px", width = "100%") {
+  html_path <- file.path(table_dir, paste0(file_stub, ".html"))
+  png_path  <- file.path(table_dir, paste0(file_stub, ".png"))
+
+  if (knitr::is_html_output()) {
+    if (!file.exists(html_path)) {
+      stop(
+        "HTML table not found: ", html_path, "\n",
+        "Available tables: ", paste(list.files(table_dir), collapse = ", ")
+      )
+    }
+
+    htmltools::tags$iframe(
+      src = html_path,
+      width = "100%",
+      height = height,
+      style = "border: none;"
+    )
+
+  } else {
+    if (!file.exists(png_path)) {
+      stop(
+        "PNG table not found: ", png_path, "\n",
+        "Available tables: ", paste(list.files(table_dir), collapse = ", ")
+      )
+    }
+
+    knitr::include_graphics(png_path)
+  }
 }
 ```
 
 ## The end of the Giannis era
 
-Five years removed from the championship, Milwaukee has officially moved on from Giannis Antetokounmpo.
+Five years removed from their second title in franchise history, and 13 years after drafting the player who came to define their modern era, the Milwaukee Bucks officially moved on from Giannis Antetokounmpo. It is unusual for a player who became the center of a franchise’s identity to be moved in the midst of his prime. He arrived as a raw teenager, grew into an MVP, gave the Bucks a title, and turned a small-market team into one of the league’s defining programs of the decade. Over the last 10 years, only Boston (530) and Denver (495) have won more regular-season games than Milwaukee (486). For a franchise that had spent most of the previous four decades fielding deeply talented, beloved teams that just could not break through, Giannis became the ultimate validator.
 
-It is easy to remember how it ended. The last few seasons got messy. The roster got older. The margin for error kept shrinking. The Damian Lillard swing never stabilized the way Milwaukee needed it to. Khris Middleton was eventually moved for Kyle Kuzma, a pivot that felt less like a title push and more like the first public sign that the old version of the Bucks was gone. Then the final injury blow came, the window closed, and Milwaukee was forced into the kind of reset it had avoided for more than a decade.
+The ending makes that greatness easy to forget. The last few seasons were an undeniable mess: the Damian Lillard acquisition never clicked the way Milwaukee needed, the organization churned through a midseason coaching change, and Khris Middleton’s ill-timed injuries eventually led to him being moved for Kyle Kuzma. Suddenly, the old core stopped looking like a clear-cut contender and more like a team that needed everything to break perfectly to make a run. Eventually, the Bucks simply ran out of answers.
 
-But the ending should not flatten what came before it.
-
-Giannis arrived as a teenage mystery and became the best player in franchise history. He gave Milwaukee an identity, a title, multiple MVP-level seasons, and a decade of relevance that most small-market teams never get. The Bucks did not just have a good run. They had an era.
-
-```{r giannis-pra}
+```{r giannis-pra, out.width="100%", fig.align="center", echo = FALSE}
 knitr::include_graphics(fig_path("giannis_production_trend.png"))
 ```
 
-The production arc tells the basic story. Giannis did not gradually become a useful star. He became the nightly engine for a franchise that eventually built everything around his pressure, his downhill force, his rebounding, and his defensive range.
-
-```{r giannis-resume}
-include_table("giannis_accomplishments_table.html")
+```{r giannis-resume, out.width="100%", fig.align="center", echo=FALSE}
+include_table("giannis_accomplishments_table", height = "560px")
 ```
 
-This is why the trade is not just a transaction. It is a franchise handoff. Milwaukee is not replacing one player. It is replacing the player who made the last decade possible.
+That résumé is why the messy ending should not diminish the whole story. Milwaukee did not waste the Giannis era. The Bucks won the title, spent years with a real chance to win more, and made the kind of aggressive choices a franchise should make around a player like Giannis. The problem is that those choices still came with a cost.
 
-## How high the Bucks climbed
+## The Cost of Climbing That High
 
-The regular-season transformation was dramatic. Milwaukee went from a team trying to build around promise to a yearly contender. At the peak, the Bucks were not just good. They were a stable regular-season machine with a championship ceiling.
+The Bucks pushed all their chips in around Antetokounmpo, chasing upgrades at the cost of picks, money, flexibility, and future optionality because the present was too big of an opportunity to treat carefully. 
 
-```{r win-pct}
+```{r win-pct, out.width="100%", fig.align="center", echo = FALSE}
 knitr::include_graphics(fig_path("bucks_win_pct_trend.png"))
 ```
 
-The regular-season baseline lasted longer than the playoff ceiling. That is what made the end feel so strange. Milwaukee remained recognizable as a serious team for a while, but the postseason evidence kept getting worse. After the 2021 title, the Bucks never got back past Round 2.
+For a long time, that urgency was rewarded. Milwaukee became one of the league’s most bankable regular-season teams, winning at a level that made contention feel like a given year after year. 
 
-```{r playoff-table}
-include_table("playoff_results_article_table.html")
+```{r playoff-table, out.width="100%", fig.align="center", echo=FALSE}
+include_table("playoff_results_article_table", height = "620px")
 ```
 
-Injuries explain part of that. Middleton’s 2022 injury changed the repeat attempt. Giannis’ 2024 injury wrecked the first Dame postseason. Dame’s Achilles ended the last version of the title chase. But the larger story is that the Bucks had become increasingly fragile. They needed too many things to go right.
+However, regular-season credibility and playoff certainty are not the same thing. After the 2021 championship, Milwaukee still looked poised to compete, but the foundation quickly started to erode. Middleton’s knee injury closed the door on the repeat bid. The 2023 collapse against Miami cracked the confidence and pushed the Bucks toward another desperate swing. Giannis’ 2024 injury wrecked the first Dame postseason. Dame’s Achilles ended the last version of the chase.
 
-```{r transaction-timeline}
-knitr::include_graphics(fig_path("transaction_timeline.png"))
+After the title, the Bucks never made it back past Round 2.
+
+```{r window-moves, out.width="100%", fig.align="center", echo=FALSE}
+include_table("window_moves_table", height = "760px")
 ```
 
-The Middleton-for-Kuzma pivot is important because it was the moment the old title core stopped looking like a title core. Milwaukee was still trying to reshape the roster around Giannis, but the moves no longer felt like clean upgrades. They felt like compromises.
+The path required a lot of sacrifice, and not every move aged the same. Some contributed to the ultimate moment. Others helped box Milwaukee into the reset it faces now. But the tradeoff is not hard to understand. The Bucks won the championship, stayed relevant for more than a decade, and got the greatest run the franchise has had since Kareem.
 
-## What Milwaukee got from Miami
+That does not make the current situation any less uncomfortable. 
 
-The return from Miami is not one obvious successor. It is a portfolio of bets.
+## Milwaukee’s Awkward Middle Ground
 
-Tyler Herro gives Milwaukee a real scorer and offensive stabilizer, but he may be more bridge piece than long-term centerpiece. Jaime Jaquez Jr. is the safest basketball player in the return, a physical connector wing with feel and finishing touch, but the jumper decides how scalable he becomes. Kel’el Ware is the upside swing. He has the tools to become a high-impact rim protector, vertical spacer, and real shooting threat at center, but the passing, self-creation, consistency, and motor questions matter. Kasparas Jakucionis is the developmental guard bet, with shooting, passing, and pick-and-roll flashes, but athletic limitations could cap the ceiling.
+Milwaukee’s position is precarious as the Bucks do not fully control their own first-round pick until 2031, so losing does not come with the usual reward. Veterans from the title chase still occupy roster spots, and the youngest players are not ready to inherit the team by default. There are prospects worth investing in, but no obvious centerpiece yet. Milwaukee has to sell development without the comfort of a blank slate.
 
-```{r miami-profile}
-include_table("miami_return_profile_table.html")
+```{r future-picks, out.width="100%", fig.align="center", echo=FALSE}
+include_table("future_pick_article_table", height = "520px")
 ```
 
-The cleanest skill signal in the return is shooting. Herro is the known volume spacer. Kasparas has the loudest pure shooting indicator in the group. Ware’s profile is different: for a young big, his three-point rate and accuracy are real spacing signals. Jaquez is the swing question.
+The next few seasons are less about the record than the answers the Bucks can pull from an awkward roster. The Bucks need to give real runway to the young players, reroute veterans where it makes sense, and find out whether anyone starts to play like part of the next core.
 
-```{r miami-shooting}
-include_table("miami_shooting_table.html")
+The Miami picks do not fix that problem, but they make it easier to navigate. The 2030 swap gives Milwaukee another upside lever before it regains full control of its own first-rounders, while the unprotected 2031 and 2033 firsts give them real draft capital beyond internal development.
+
+## What Milwaukee Got From Miami
+
+The Miami return is not the ideal handoff to the next era, but it gave Milwaukee several different ways to start sorting the roster after Giannis. Herro is the clear short-term scorer and likely the easiest player to reroute later. Jaquez gives them a sturdier wing with feel, cutting, slashing, and matchup attacking. Ware is the higher-ceiling frontcourt swing, while Kasparas gives the Bucks another guard whose value is tied to shooting and processing. The picks matter too, but the immediate question is how much Milwaukee can get from the players attached to them.
+
+```{r miami-profile, out.width="100%", fig.align="center", echo=FALSE}
+include_table("miami_return_profile_table", height = "480px")
 ```
 
-The playtype data helps separate what these players actually do from the general “young talent” label. Herro’s value is more balanced across creation, spacing, transition, and finishing. Jaquez’s profile is more uneven: the finishing pops, but the creation and spacing efficiency are the concerns.
+Herro and Jaquez can help right away, though both may eventually be more valuable as flexible pieces than roster main-stays. Ware and Kasparas need more runway, but they are closer to the kind of upside Milwaukee needs.
 
-```{r herro-jaquez-playtypes}
+```{r miami-shooting, out.width="100%", fig.align="center", echo=FALSE}
+include_table("miami_shooting_table", height = "420px")
+```
+
+Shooting is the clearest shared thread. Herro is a proven volume spacer. Kasparas has the loudest pure shooting signal. Ware’s shooting is unusual for his size, but the indicators are clear enough to project him as a viable spacing big. Jaquez is the exception, with low 3-point volume and shaky percentages.
+
+Milwaukee already had the outline of a high-volume shooting team. The Bucks ranked 10th in 3-point attempts last season at 39.1 per game, fifth in 3-point frequency at 45.7%, and second in accuracy at 38.7%. Adding Kasparas and Ware to Rollins, AJ Green, and the young spacers they drafted gives Milwaukee a clear identity to test while the rest of the roster gets sorted out.
+
+```{r herro-jaquez-playtypes, out.width="100%", fig.align="center", echo = FALSE}
 knitr::include_graphics(fig_path("miami_return_playtype_profile_herro_jaquez.png"))
 ```
 
-Ware and Kasparas are different kinds of development bets. Ware’s ceiling is tied to whether the rim protection, vertical play, and shooting become stable enough to offset the skill gaps. Kasparas is more of a connector and playmaking bet, with real three-point upside and pick-and-roll feel, but less athletic margin.
+Herro and Jaquez bring different kinds of offensive value. Herro gives Milwaukee scalable scoring through creation, spacing, and off-ball shooting gravity. Jaquez is more connective, but not incidental. His slashing, passing, transition play, and mismatch attacking were strong enough to put him in the Sixth Man of the Year conversation. The swing point is shooting gravity. Herro bends defenses from the perimeter. Jaquez generates immense downhill pressure, but he has to keep defenses honest for that value to scale as he draws more attention.
 
-```{r ware-kasparas-playtypes}
+```{r ware-kasparas-playtypes, out.width="100%", fig.align="center", echo = FALSE}
 knitr::include_graphics(fig_path("miami_return_playtype_profile_ware_kasparas.png"))
 ```
 
-## The lottery swings
+Ware and Kasparas are the longer developmental pieces, but the hope is not just that they become playable. Ware is the biggest swing; if the shooting, rebounding, and rim protection all click, he can become a starting-level frontcourt piece with real two-way value. Kasparas gets there differently. His value depends on the shooting and processing translating well enough for him to become a useful rotation connector without being held back by his athletic limitations. 
 
-The Miami return gives Milwaukee actual young pieces to evaluate, but the reset only becomes interesting if the draft part hits too.
-
-Brayden Burries is the cleaner translation bet. He was the best player on a dominant Arizona team, showed a versatile scoring arsenal, made an impact in transition, and has enough two-way utility to fit next to Ryan Rollins. The self-creation is not perfect, but the role is easier to imagine.
-
-Ament is the more volatile swing. The tools are obvious: size, movement, shot-making flashes, defensive versatility, and the kind of forward frame teams chase. The concern is that so much of the evaluation is still built on projection. His efficiency, finishing, feel, consistency, and processing all leave real questions. That does not kill the upside, but it changes how cleanly you can bet on it.
-
-```{r draft-prospects}
-include_table("draft_prospects_table.html")
+```{r ware-kasparas-advanced, out.width="100%", fig.align="center", echo=FALSE}
+include_table("miami_return_metrics_table", height = "360px")
 ```
 
-Burries is the safer bet to become useful. Ament is the one who can change the ceiling if the flashes become structure.
+The broader analytical profile makes that divide clearer. Ware is already showing indicators, with a 39.5% mark from three, a 24.2% defensive rebounding rate, and 2.3 blocks per 100. That is the outline of a starting-level spacing big if the tools connect. The concern is how narrow the offensive pathway can get. His 1.9 potential assists per 100 is not shocking for a big in his mold, but it shows how much of his value still has to come from finishing, spacing, rebounding, and defense. When the effort or consistency wavers, there are not many connective skills to fall back on.
 
-## The pick situation is still bleak
+Kasparas’ case is cleaner on-ball. The 42.3% mark from three and 11.2 potential assists per 100 point to a guard who can shoot, process, and organize offense. He does not have Ware’s physical margin for error, so those offensive skills have to translate quickly enough for him to hold a real rotation role.
 
-The reset added Miami upside, but it did not give Milwaukee the kind of clean pick control most rebuilding teams want.
+## The Bucks First Lottery Picks Since 2016
 
-```{r future-picks}
-include_table("future_pick_article_table.html")
+The Miami return was not the only way Milwaukee added young talent. The Bucks also brought in their first lottery picks since Thon Maker in 2016 with Burries and Ament.
+
+```{r draft-prospects, out.width="100%", fig.align="center", echo=FALSE}
+include_table("draft_prospects_table", height = "360px")
 ```
 
-That is the tension. Milwaukee has more young talent than it did before the trade, but it still does not control the board cleanly right away. The Bucks can get better from here, but they cannot just bottom out with total freedom. The Miami picks matter. The internal development matters more.
+Burries is the more win-now prospect. His guard size, downhill scoring, transition pressure, and defensive tools give Milwaukee a direct path to useful two-way minutes next to Ryan Rollins. He does not need the offense built around him to matter. He can find the ball, push pace, create advantages before the defense is set, and make enough winning plays to fit on a roster still searching for structure.
 
-## What the reset can become
+Ament is the project. Milwaukee needed a forward swing with size, movement, and shot-making, and he gives them that. The concern is how much has to catch up. The finishing, efficiency, processing, and physical consistency are still developing, which leaves a real gap between the idea of Ament and the current version. Still, that is the kind of gamble the Bucks needed. Safe rotation players help steady the ship, but they do not lift a team out of mediocrity. Milwaukee needed a swing at higher-end talent, and in the late lottery, that usually means living with a project.
 
-The reset is not built around one obvious franchise player. It is built around multiple different bets.
+## What Milwaukee Has to Sort Out Next
 
-Burries is the cleanest basketball fit. Ament is the high-variance forward swing. Ware might have the highest ceiling if the tools translate into reliable habits. Kasparas is the connector guard with shooting and pick-and-roll upside. Rollins matters too, because he gives Milwaukee another two-way guard with current utility and offensive upside.
+The hard part now is that Milwaukee has too many timelines on one roster. Herro and Jaquez can help right away. Ware, Kasparas, Burries, and Ament need time. Rollins and Green sit somewhere in between: young enough to keep investing in, but useful enough that their trade value still has to be monitored. Rollins feels more like a piece Milwaukee should try to build with. Green is the kind of shooter contenders tend to inquire about.
 
-The problem is that each path has a different failure point.
-
-```{r reset-paths}
-include_table("reset_paths_table.html")
+```{r contract-context, out.width="100%", fig.align="center", echo=FALSE}
+include_table("contract_context_table", height = "620px")
 ```
 
-The best version of this reset is real. Ware becomes a two-way frontcourt anchor. Ament’s flashes become structure. Burries becomes a high-level two-way starter. Kasparas becomes a rotation connector with enough shooting and playmaking to matter. That is not impossible.
+The veteran group should be treated more like movable pieces than mainstays. Turner can provide starter minutes, but his contract and uneven 2026 season make him a logical reroute piece if the right market develops. Kuzma, Porter, Trent, Harris, and Sims are less about the next core than salary, depth, and deadline flexibility. Milwaukee should not dump veterans just to get younger; there is value in keeping established professionals around a young roster. But that stability cannot come at the cost of the evaluations the Bucks actually need to make.
 
-But the bad version is not hard to see either. Ament never turns projection into production. Ware’s motor and processing concerns harden. Burries is useful but lacks enough self-creation to scale. Kasparas cannot separate enough athletically. In that version, Milwaukee has young talent, but no clear engine.
+That is the task of the first post-Giannis season. Milwaukee needs clearer answers on Herro’s market, Jaquez’s fit, Rollins’ staying power, Green’s value, and which of Ware, Kasparas, Burries, and Ament deserve developmental priority.
 
-## Where that leaves Milwaukee
+## Where That Leaves Milwaukee
 
-Milwaukee did the thing that eventually had to happen. The Giannis era had run its course, and the final version of the roster no longer looked close enough to justify pretending otherwise.
+This is the cost of the last era. Milwaukee paid heavily to build around Giannis, and some of those swings eventually boxed the franchise in. The pick situation is bleak, the roster is awkward, and there is no obvious next star, but the Bucks are not walking into a helpless era. Without Turner and Kuzma, Milwaukee’s average age drops to 24.6, which would be in the range of the league’s youngest teams by raw age. That does not make this a simple rebuild, but it shows why there is room for optimism. The Bucks have young players worth evaluating, a scorer with market value, veterans who can still be moved, and two lottery swings in Burries and Ament.
 
-That does not make the trade painless. It does not make the reset clean. It does not guarantee that the next core is already here.
+It is bittersweet more than hopeless. Milwaukee is losing arguably the greatest player it ever had, but it is not walking away from the Giannis era with regret. The Bucks got thirteen years of an all-time great, their best stretch of modern relevance, and the second championship in franchise history. Most teams would take that deal and deal with the aftermath later.
 
-What it does give Milwaukee is a start.
-
-The Bucks now have a younger timeline, multiple developmental swings, some Miami pick upside, and enough useful pieces to avoid starting from zero. That is not the same as having a future star. It is not the same as having a clean rebuild. It is not the same as replacing Giannis.
-
-It is simply the next version of the franchise trying to find itself after the greatest player it ever had.
-
-## Appendix
-
-### DataBallr snapshot
-
-```{r databallr-snapshot}
-include_table("miami_return_metrics_table.html")
-```
-
-### Full playtype table
-
-```{r databallr-playtypes}
-include_table("databallr_playtype_table.html")
-```
-
-### Detailed future pick control
-
-```{r appendix-picks}
-include_table("appendix_future_pick_control_table.html")
-```
-
-### Year-by-year team results
-
-```{r appendix-team-results}
-include_table("appendix_team_results_table.html")
-```
-
-### Transaction summary
-
-```{r appendix-transactions}
-include_table("appendix_transaction_summary_table.html")
-```
-
-## Methodology notes
-
-This report uses manually collected and cleaned data from Basketball Reference, ESPN, RealGM, NBA.com-style transaction research, DataBallr screenshots, and manually entered draft/prospect references.
-
-DataBallr metrics were manually entered from player dashboard screenshots. Percentile ranks are based on positional-ranked percentiles, so they are used as contextual benchmarks rather than raw leaguewide ranks.
-
-Playtype buckets follow DataBallr’s framework: Creation includes handler, isolation, and post-up usage; Spacing includes spot-up, off-screen, and handoff actions; Transition captures open-floor scoring; Finishing includes cuts, rolls, putbacks, and similar interior finish playtypes.
-
-The Ament discussion is informed by broader scouting context, especially the projection-versus-production tension: tools, size, movement, and skill flashes on one side; efficiency, finishing, feel, and consistency concerns on the other.
-```
+Later is here now, and the next version of the Bucks will be shaped by how quickly they turn this awkward roster into one with a clearer direction.

@@ -292,34 +292,106 @@ save_processed(future_picks_clean, "future_picks_clean.csv")
 # 8. Current roster
 # -------------------------------------------------------------------------
 
+parse_money <- function(x) {
+  x <- as.character(x)
+
+  multiplier <- case_when(
+    str_detect(str_to_lower(x), "million|m") ~ 1e6,
+    str_detect(str_to_lower(x), "thousand|k") ~ 1e3,
+    TRUE ~ 1
+  )
+
+  number <- x |>
+    str_replace_all("\\$", "") |>
+    str_replace_all(",", "") |>
+    str_replace_all("million", "") |>
+    str_replace_all("Million", "") |>
+    str_replace_all("M", "") |>
+    str_replace_all("m", "") |>
+    str_replace_all("thousand", "") |>
+    str_replace_all("Thousand", "") |>
+    str_replace_all("K", "") |>
+    str_replace_all("k", "") |>
+    str_trim() |>
+    suppressWarnings(as.numeric())
+
+  number * multiplier
+}
+
+# -------------------------------------------------------------------------
+# Current roster
+# -------------------------------------------------------------------------
+
+parse_money <- function(x) {
+  x_chr <- as.character(x)
+
+  multiplier <- case_when(
+    str_detect(str_to_lower(x_chr), "million|m") ~ 1e6,
+    str_detect(str_to_lower(x_chr), "thousand|k") ~ 1e3,
+    TRUE ~ 1
+  )
+
+  number <- readr::parse_number(x_chr)
+
+  number * multiplier
+}
+
 current_roster_clean <- current_roster_raw |>
+  clean_names() |>
   mutate(
     player = clean_text(player),
     pos = clean_text(pos),
-    age = as.numeric(age),
     height = clean_text(height),
-    weight = as.numeric(weight),
-    salary_raw = clean_text(salary),
-    salary_millions = parse_money_millions(salary),
-    timeline_group = case_when(
-      age <= 22 ~ "Development",
-      age <= 26 ~ "Bridge/core",
-      age <= 30 ~ "Prime veteran",
-      age > 30 ~ "Older veteran",
-      TRUE ~ "Unknown"
+    salary = clean_text(salary),
+
+    option_type = clean_text(option_type),
+    roster_bucket = clean_text(roster_bucket),
+    reset_role = clean_text(reset_role),
+
+    age = suppressWarnings(as.numeric(age)),
+    weight = suppressWarnings(as.numeric(weight)),
+    years_remaining = suppressWarnings(as.numeric(years_remaining)),
+    final_year = suppressWarnings(as.numeric(final_year)),
+
+    salary_2026 = parse_money(salary),
+    future_money_remaining = parse_money(future_money_remaining),
+
+    total_remaining_commitment = salary_2026 + replace_na(future_money_remaining, 0),
+
+    salary_millions = salary_2026 / 1e6,
+    future_money_millions = future_money_remaining / 1e6,
+    total_commitment_millions = total_remaining_commitment / 1e6,
+
+    roster_bucket = factor(
+      roster_bucket,
+      levels = c(
+        "Trade return",
+        "2026 draft",
+        "Young/bridge piece",
+        "Veteran"
+      )
     ),
-    roster_bucket = case_when(
-      player %in% c("Tyler Herro", "Kel'el Ware", "Jaime Jaquez Jr.", "Kasparas Jakucionis") ~ "Trade return",
-      player %in% c("Brayden Burries", "Nate Ament") ~ "2026 draft",
-      age <= 26 ~ "Young/bridge piece",
-      TRUE ~ "Veteran"
-    ),
+
     future_relevant = case_when(
-      player %in% c("Kyle Kuzma", "Myles Turner", "Kevin Porter Jr.") ~ FALSE,
-      TRUE ~ TRUE
+      roster_bucket %in% c("Trade return", "2026 draft", "Young/bridge piece") ~ TRUE,
+      player %in% c("Myles Turner", "Kyle Kuzma") ~ TRUE,
+      TRUE ~ FALSE
+    ),
+
+    likely_movable = case_when(
+      player %in% c(
+        "Tyler Herro",
+        "Kyle Kuzma",
+        "Myles Turner",
+        "Kevin Porter Jr.",
+        "Gary Trent Jr.",
+        "Gary Harris",
+        "Jericho Sims",
+        "Pete Nance"
+      ) ~ TRUE,
+      TRUE ~ FALSE
     )
-  ) |>
-  arrange(age)
+  )
 
 save_processed(current_roster_clean, "current_roster_clean.csv")
 

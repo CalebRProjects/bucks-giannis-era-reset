@@ -1,15 +1,16 @@
-PLAYER,POS,AGE,HEIGHT,WEIGHT,SALARY
-Tyler Herro,G,26.42,6'5,195,$33 million
-Kel'el Ware,F-C,22.17,7'0,230,$4.6 million
-Jaime Jaquez Jr.,F,25.34,6'6,225,$5.9 million
-Kasparas Jakučionis,G,20.07,6'5,200,$3.8 million
-Kyle Kuzma,F,30.92,6'8,221,$20.5 million
-Myles Turner,C,30.25,6'11,250,$26.6 million
-Brayden Burries,G,20.76,6'4,215,$6.4 million
-Nate Ament,F,19.54,6'10,211,$5.5 million
-Ryan Rollins,G,23.97,6'3,180,$4 million
-AJ Green,G,26.74,6'4,190,$10 million
-Andre Jackson Jr.,F,24.61,6'6,209,$2.4 million
-Kevin Porter Jr.,G,26.14,6'5,203,$5.4 million
-Gary Harris,G,31.77,6'4,210,$3.8 million
-Jericho Sims,F-C,27.59,6'10,250,$2.8 million
+PLAYER,POS,AGE,HEIGHT,WEIGHT,SALARY,YEARS_REMAINING,FUTURE_MONEY_REMAINING,FINAL_YEAR,OPTION_TYPE,ROSTER_BUCKET,RESET_ROLE
+Tyler Herro,G,26.42,6'5,195,"$33,000,000 ",1,,2027,Expiring,Trade return,Bridge scorer or reroute asset
+Kel'el Ware,F-C,22.17,7'0,230,"$4,654,920 ",2,"$7,135,992 ",2028,Team option,Trade return,Major development swing
+Jaime Jaquez Jr.,F,25.34,6'6,225,"$5,939,141 ",1,,2027,Expiring,Trade return,Immediate evaluation piece
+Kasparas Jakucionis,G,20.07,6'5,200,"$3,841,680 ",3,"$10,230,127 ",2029,Rookie scale,Trade return,Longer runway
+Kyle Kuzma,F,30.92,6'8,221,"$20,490,152 ",1,,2027,Expiring,Veteran,Not central to timeline
+Myles Turner,C,30.25,6'11,250,"$26,584,164 ",3,"$56,966,067 ",2029,None,Veteran,Bridge or reroute piece
+Brayden Burries,G,20.76,6'4,215,"$6,400,000 ",4,,2030,Rookie scale,2026 draft,Cleaner two-way bet
+Nate Ament,F,19.54,6'10,211,"$5,500,000 ",4,,2030,Rookie scale,2026 draft,High-variance ceiling swing
+Ryan Rollins,G,23.97,6'3,180,"$4,000,000 ",2,"$4,000,000 ",2028,Player option,Young/bridge piece,Potential timeline fit
+AJ Green,G,26.74,6'4,190,"$10,044,644 ",4,"$34,955,356 ",2030,None,Young/bridge piece,Useful spacing piece
+Andre Jackson Jr.,F,24.61,6'6,209,"$2,406,205 ",2,,2028,Club option,Young/bridge piece,Defense/energy depth
+Kevin Porter Jr.,G,26.14,6'5,203,"$5,390,700 ",1,,2027,Expiring,Veteran,Short-term bridge piece
+Gary Harris,G,31.77,6'4,210,"$3,815,861 ",1,,2027,Expiring,Veteran,Depth or trade filler
+Jericho Sims,F-C,27.59,6'10,250,"$2,801,346 ",1,,2027,Expiring,Veteran,Frontcourt depth
+Pete Nance,F,26,6'10,225,"$2,497,812 ",2,"$2,707,612 ",2028,Team option,Veteran,Depth or trade filler

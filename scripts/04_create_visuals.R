@@ -141,7 +141,7 @@ win_plot_data <- bucks_team_results_clean |>
     article_phase = case_when(
       season_start <= 2017 ~ "Build-up",
       season_start <= 2023 ~ "Title-window",
-      TRUE ~ "Window breaks"
+      TRUE ~ "Window Ends"
     ),
     seed_label = case_when(
       is.na(seed) ~ "Missed",
@@ -173,7 +173,7 @@ p_win_pct <- ggplot(
     values = c(
       "Build-up" = "#D8C59A",
       "Title-window" = BUCKS_GREEN,
-      "Window breaks" = "#9B2C2C"
+      "Window Ends" = "#9B2C2C"
     )
   ) +
   scale_y_continuous(
@@ -191,7 +191,7 @@ p_win_pct <- ggplot(
     x = NULL,
     y = "Win%",
     fill = NULL,
-    caption = "Source: Basketball Reference manual research | Dashed line marks .500 | @Rambzee_"
+    caption = "Source: Basketball Reference | Dashed line marks .500 | @Rambzee_"
   ) +
   theme_caleb_elevated(grid = "y", legend = "bottom") +
   theme(
@@ -204,53 +204,6 @@ save_bucks_plot(
   "bucks_win_pct_trend.png",
   width = 9,
   height = 6
-)
-
-# -------------------------------------------------------------------------
-# 3. Roster age distribution
-# -------------------------------------------------------------------------
-
-full_avg_age <- mean(current_roster_clean$age, na.rm = TRUE)
-
-p_roster_age <- current_roster_clean |>
-  mutate(
-    player = fct_reorder(player, age),
-    likely_movable = player %in% c("Kyle Kuzma", "Myles Turner", "Kevin Porter Jr.")
-  ) |>
-  ggplot(aes(x = age, y = player, fill = roster_bucket, alpha = likely_movable)) +
-  geom_col(width = 0.72) +
-  geom_vline(
-    xintercept = full_avg_age,
-    linetype = "dashed",
-    linewidth = 0.65,
-    color = TEXT_LIGHT
-  ) +
-  annotate(
-    "text",
-    x = full_avg_age + 0.25,
-    y = 1.2,
-    label = paste0("Avg: ", round(full_avg_age, 1)),
-    hjust = 0,
-    size = 4,
-    color = TEXT_DARK
-  ) +
-  scale_fill_manual(values = ROSTER_COLORS) +
-  scale_alpha_manual(values = c(`FALSE` = 1, `TRUE` = 0.55), guide = "none") +
-  labs(
-    title = "Milwaukee Finally Has a Younger Timeline Again",
-    subtitle = "Current roster age by player; likely movable veterans are faded",
-    x = "Age",
-    y = NULL,
-    fill = NULL,
-    caption = "Source: ESPN | @Rambzee_"
-  ) +
-  theme_caleb_elevated(grid = "x", legend = "bottom")
-
-save_bucks_plot(
-  p_roster_age,
-  "roster_age_distribution.png",
-  width = 8.5,
-  height = 6.5
 )
 
 # -------------------------------------------------------------------------
@@ -468,130 +421,6 @@ p_miami_playtypes_young <- make_miami_playtype_plot(
   file_name = "miami_return_playtype_profile_ware_kasparas.png",
   title = "Ware and Kasparas Show Two Different Development Paths",
   subtitle = "Bar length shows each playtype's share of shot volume; labels show playtype rTS"
-)
-
-# -------------------------------------------------------------------------
-# 5. Simplified transaction timeline for appendix / article context
-# -------------------------------------------------------------------------
-
-library(ggrepel)
-
-transaction_strip_data <- tibble::tribble(
-  ~date,          ~label,                         ~phase,                ~label_side, ~label_nudge_days,
-  "2013-06-27",  "Giannis draft",                 "Build the core",       1,           -45,
-  "2013-07-31",  "Middleton acquired",            "Build the core",      -1,            55,
-  "2017-11-07",  "Bledsoe trade",                 "Build the core",      -1,             0,
-  "2018-07-17",  "Lopez signing",                 "Build the core",       1,             0,
-  "2020-11-21",  "Portis signing",                "Spend for the title",  1,           -45,
-  "2020-11-23",  "Jrue trade",                    "Spend for the title", -1,            45,
-  "2023-09-27",  "Dame trade",                    "Extend, then reset",  -1,             0,
-  "2025-02-07",  "Middleton/Kuzma pivot",         "Extend, then reset",   1,             0,
-  "2025-07-01",  "Dame waived\nTurner signed",    "Extend, then reset",  -1,             0,
-  "2026-06-22",  "Giannis trade",                 "Extend, then reset",   1,           -65,
-  "2026-06-23",  "Burries/Ament",                 "Extend, then reset",  -1,            65
-) |>
-  mutate(
-    date = ymd(date),
-    label_date = date + days(label_nudge_days),
-    y = 0,
-    label_y = label_side * 0.34,
-    stem_y = label_side * 0.13,
-    phase = factor(
-      phase,
-      levels = c("Build the core", "Spend for the title", "Extend, then reset")
-    )
-  )
-
-p_transaction_timeline <- ggplot(
-  transaction_strip_data,
-  aes(x = date, y = y)
-) +
-  geom_hline(
-    yintercept = 0,
-    color = GRID,
-    linewidth = 1.8
-  ) +
-  geom_segment(
-    aes(
-      x = date,
-      xend = label_date,
-      y = stem_y,
-      yend = label_y - label_side * 0.035,
-      color = phase
-    ),
-    linewidth = 0.65,
-    alpha = 0.8,
-    show.legend = FALSE
-  ) +
-  geom_point(
-    aes(fill = phase),
-    shape = 21,
-    size = 5.7,
-    color = BG,
-    stroke = 1.15,
-    show.legend = FALSE
-  ) +
-  geom_label(
-    aes(
-      x = label_date,
-      y = label_y,
-      label = label,
-      color = phase
-    ),
-    fill = BG,
-    label.size = 0,
-    size = 4.0,
-    fontface = "bold",
-    lineheight = 0.9,
-    show.legend = FALSE
-  ) +
-  scale_fill_manual(
-    values = c(
-      "Build the core" = BUCKS_BLUE,
-      "Spend for the title" = BUCKS_GREEN,
-      "Extend, then reset" = "#9B2C2C"
-    )
-  ) +
-  scale_color_manual(
-    values = c(
-      "Build the core" = BUCKS_BLUE,
-      "Spend for the title" = BUCKS_GREEN,
-      "Extend, then reset" = "#9B2C2C"
-    )
-  ) +
-  scale_x_date(
-    date_breaks = "2 years",
-    date_labels = "%Y",
-    limits = c(ymd("2012-11-01"), ymd("2027-02-01")),
-    expand = expansion(mult = c(0.01, 0.01))
-  ) +
-  scale_y_continuous(
-    limits = c(-0.58, 0.58),
-    breaks = NULL
-  ) +
-  labs(
-    title = "The Moves That Built, Extended, and Ended the Window",
-    subtitle = "Milwaukee's Giannis era moved from core-building, to title spending, to a forced reset",
-    x = NULL,
-    y = NULL,
-    caption = "Source: Manual transaction research | Blue = core-building, green = title spending, red = extension/reset moves | Viz: Caleb Ramsey"
-  ) +
-  theme_caleb_elevated(grid = "x", legend = "none") +
-  theme(
-    plot.title = element_text(size = 24),
-    plot.subtitle = element_text(size = 14),
-    axis.text.x = element_text(size = 12),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank(),
-    plot.caption = element_text(size = 9.5),
-    plot.margin = margin(16, 30, 16, 30)
-  )
-
-save_bucks_plot(
-  p_transaction_timeline,
-  "transaction_timeline.png",
-  width = 10.5,
-  height = 3.8
 )
 
 message("Curated visuals created and saved to outputs/figures.")
